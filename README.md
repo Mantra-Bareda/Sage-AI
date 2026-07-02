@@ -108,16 +108,3 @@ Below is a visual walkthrough of the fully deployed SAGE-AI platform:
 ![Quiz & Flashcard Evaluation View Placeholder](assets/evaluation_preview.png)
 
 ---
-
-## 📂 Repository Assets Structure
-
-To render the imagery inside this showcase document correctly, please structure your repository's local file tree exactly as shown below:
-
-```text
-.
-├── README.md               <-- This file
-└── assets/                 <-- Create this directory to store graphic assets
-    ├── dashboard_preview.png
-    ├── classroom_preview.png
-    └── evaluation_preview.png
-```
