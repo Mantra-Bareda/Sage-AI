@@ -48,31 +48,28 @@ SAGE-AI is engineered for maximum performance, minimal hosting costs, and flawle
 
 
 ```
-
-   [ Client Browser (HTML5/CSS3/Vanilla JS) ]
-      │                   ▲             │
-Uploads Syllabus          │             │ Web Speech TTS /
-& Image Media             │             │ JS PDF Export
-      │             JSON Payload        │ (Zero-Server Load)
-      ▼                   │             ▼
-
-┌─────────────────────────────┴─────────────────────────────┐
-│                      FLASK BACKEND                        │
-│                                                           │
-│ ┌─────────────────────────┐     ┌───────────────────────┐ │
-│ │     Document Parser     │     │   State Management    │ │
-│ │       (PyPDF2)          │     │    (SQLite 3)         │ │
-│ └───────────┬─────────────┘     └───────────────────────┘ │
-│             │                                             │
-│             ▼                                             │
-│ ┌───────────────────────────────────────────────────────┐ │
-│ │        Intelligent Model-Switching Controller         │ │
-│ │  (Dynamic Fallbacks / Automatic Rate Limit Shield)   │ │
-│ └───────────────────────────┬───────────────────────────┘ │
-└─────────────────────────────┼─────────────────────────────┘
-▼
-[ External Gemini API Cluster ]
-
+[ Client Browser (HTML5 / CSS3 / Vanilla JS) ]
+             │                    ▲              │
+     Uploads Syllabus             │              │ Web Speech TTS /
+      & Image Media               │              │ JS PDF Export
+             │              JSON Payload         │ (Zero-Server Load)
+             ▼                    │              ▼
+┌─────────────────────────────────┴─────────────────────────────────┐
+│                          FLASK BACKEND                            │
+│                                                                   │
+│  ┌─────────────────────────┐           ┌───────────────────────┐  │
+│  │     Document Parser     │           │   State Management    │  │
+│  │        (PyPDF2)         │           │      (SQLite 3)       │  │
+│  └────────────┬────────────┘           └───────────────────────┘  │
+│               │                                                   │
+│               ▼                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │            Intelligent Model-Switching Controller           │  │
+│  │     (Dynamic Fallbacks / Automatic Rate Limit Shield)       │  │
+│  └──────────────────────────────┬──────────────────────────────┘  │
+└─────────────────────────────────┼─────────────────────────────────┘
+                                  ▼
+                   [ External Gemini API Cluster ]
 ```
 
 * **Frontend:** Vanilla HTML5, CSS3, Modern ES6 JavaScript. Clean, responsive, semantic UX built entirely around seamless user interactions.
