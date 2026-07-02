@@ -49,15 +49,12 @@ SAGE-AI is engineered for maximum performance, minimal hosting costs, and flawle
 
 ```
 
-```
    [ Client Browser (HTML5/CSS3/Vanilla JS) ]
       │                   ▲             │
 Uploads Syllabus          │             │ Web Speech TTS /
 & Image Media             │             │ JS PDF Export
       │             JSON Payload        │ (Zero-Server Load)
       ▼                   │             ▼
-
-```
 
 ┌─────────────────────────────┴─────────────────────────────┐
 │                      FLASK BACKEND                        │
