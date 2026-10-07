@@ -117,21 +117,21 @@ Provides structured communication between the frontend and backend.
 
 ### Main Interface
 
-```text
+
 ![Main Interface](assets/classroom_preview.png)
-```
+
 
 ### Document Upload
 
-```text
+
 ![Document Upload](assets/dashboard_preview.png)
-```
+
 
 ### AI Response
 
-```text
+
 ![AI Output](assets/evaluation_preview.png)
-```
+
 
 ## What I Learned
 
