@@ -1,110 +1,181 @@
-# 🎓 SAGE-AI: Autonomous AI-Powered Study & Curriculum Orchestrator
+# Sage-AI
 
-[![Application Status](https://img.shields.io/badge/Status-Fully%20Functional-brightgreen?style=for-the-badge)](https://sageai.pythonanywhere.com)
-[![Deployment](https://img.shields.io/badge/Platform-PythonAnywhere-blue?style=for-the-badge)](https://sageai.pythonanywhere.com)
-[![Tech Stack](https://img.shields.io/badge/Backend-Flask%20%7C%20SQLite-orange?style=for-the-badge)](#-tech-stack--architecture)
+An AI-powered document and knowledge assistant built using Python, Flask, and Large Language Models.
 
-SAGE-AI is a fully automated, production-ready educational platform that transforms raw, unstructured academic syllabi into comprehensive, unit-wise digital classrooms. Designed to eliminate administrative overhead for teachers and maximize retention for students, SAGE-AI ingests massive document inputs and cross-compiles them into structured notes, interactive quizzes, multi-modal study materials, and dynamic revision assets.
+## Overview
 
-🔗 **Live Production URL:** [https://sageai.pythonanywhere.com](https://sageai.pythonanywhere.com)
+Sage-AI is a full-stack application designed to process documents, manage information, and provide AI-assisted responses through a structured backend system.
 
----
+The project focuses on practical integration of LLM APIs, document handling, database management, and modular backend development rather than simply generating text responses.
 
-## 🔒 Note on Source Code
+It was built to explore how modern AI systems can combine traditional software engineering with language models to create useful applications.
 
-> **Internal Repository Status:** **PRIVATE / PROPRIETARY**
->
-> To protect proprietary prompt engineering pipelines, architectural orchestration layers, and custom API-handling algorithms, the source code for this repository is kept confidential. 
-> 
-> However, **the application is 100% complete, fully optimized, and actively deployed.** You can fully evaluate system behavior, UI/UX, database state persistence, and AI intelligence live by logging in with Google at the production link above.
+## Features
 
----
+* AI-powered question answering
+* Document upload and processing
+* LLM API integration
+* Persistent chat and data storage
+* Flask-based backend
+* Structured API architecture
+* Database integration
+* Context-aware responses
+* Modular service-based design
+* Error handling and validation
 
-## 🚀 Core Architectural Features
+## Tech Stack
 
-### 📂 1. Multi-Format Syllabus Ingestion Engine
-* **Asynchronous Parsing:** Seamlessly processes raw text, structured `.docx`, or unstructured complex `.pdf` files using a backend pipeline driven by `PyPDF2`.
-* **Two-Step Token Optimization:** Instead of passing massive documents down the chain, SAGE-AI executes a localized pass to extract micro-topics and critical structural nodes, permanently solving token bloat and optimizing inference costs.
+### Backend
 
-### 📝 2. Comprehensive Unit-Wise Knowledge Generation
-* **Structured Notes:** Automatically divides the parsed syllabus into explicit academic units, compiling exhaustive deep-dive notes for each topic.
-* **Dynamic Document Compilation:** Client-side JavaScript-driven PDF generation allowing instant, single-click exporting of complete unit notes combined with custom practice question sheets, incurring **zero server overhead**.
+* Python
+* Flask
+* REST APIs
 
-### 🧠 3. Interactive Evaluation & Adaptive Learning
-* **Multi-Tiered Quizzing:** Generates comprehensive Multiple Choice Question (MCQ) quizzes, digital flashcards, and written conceptual questions.
-* **AI Practice Mode:** Evaluates student responses to open-ended questions using conversational LLM feedback loops.
-* **In-Context Contextual Chat:** A dedicated AI study assistant baked directly into the notes interface to clear up real-time doubts and generate ad-hoc extra practice problems.
+### AI / LLM
 
-### 🎙️ 4. Multi-Modal Content & Rapid Revision
-* **Automated Audio Podcasts:** Converts written unit outlines into highly engaging, 5–6 minute audio summary podcasts utilizing hyper-optimized native browser Web Speech API pipelines.
-* **10-Minute Rapid Cheat Sheets:** A single-button compilation engine that distills multi-page units into high-impact, 1-to-2 page high-yield rapid revision sheets.
-* **Vision-Language Expansion:** Features an "Extra Notes" subsystem powered by multimodal Gemini model processing to instantly generate contextually integrated study guides from uploaded diagrams, textbook snapshots, and external media.
+* Gemini API
+* Prompt engineering
+* Context management
 
----
+### Database
 
-## 🛠️ Tech Stack & Architecture
+* SQLite
 
-SAGE-AI is engineered for maximum performance, minimal hosting costs, and flawless state management.
+### Data Processing
 
+* JSON
+* File handling
+* Document parsing
 
+### Tools
+
+* Git
+* GitHub
+* VS Code
+
+## System Workflow
+
+```text
+User
+   |
+   v
+Frontend Interface
+   |
+   v
+Flask Backend
+   |
+   +------ Document Processing
+   |
+   +------ Database Operations
+   |
+   +------ LLM API Integration
+   |
+   v
+Generated Response
 ```
-[ Client Browser (HTML5 / CSS3 / Vanilla JS) ]
-             │                    ▲              │
-     Uploads Syllabus             │              │ Web Speech TTS /
-      & Image Media               │              │ JS PDF Export
-             │              JSON Payload         │ (Zero-Server Load)
-             ▼                    │              ▼
-┌─────────────────────────────────┴─────────────────────────────────┐
-│                          FLASK BACKEND                            │
-│                                                                   │
-│  ┌─────────────────────────┐           ┌───────────────────────┐  │
-│  │     Document Parser     │           │   State Management    │  │
-│  │        (PyPDF2)         │           │      (SQLite 3)       │  │
-│  └────────────┬────────────┘           └───────────────────────┘  │
-│               │                                                   │
-│               ▼                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐  │
-│  │            Intelligent Model-Switching Controller           │  │
-│  │     (Dynamic Fallbacks / Automatic Rate Limit Shield)       │  │
-│  └──────────────────────────────┬──────────────────────────────┘  │
-└─────────────────────────────────┼─────────────────────────────────┘
-                                  ▼
-                   [ External Gemini API Cluster ]
+
+The backend handles request processing, document parsing, database interaction, and communication with the language model API before returning structured responses.
+
+## Project Structure
+
+```text
+Sage-AI/
+├── app/
+│   ├── routes/
+│   ├── services/
+│   ├── models/
+│   ├── templates/
+│   └── static/
+├── database/
+├── uploads/
+├── README.md
+├── requirements.txt
+└── run.py
 ```
 
-* **Frontend:** Vanilla HTML5, CSS3, Modern ES6 JavaScript. Clean, responsive, semantic UX built entirely around seamless user interactions.
-* **Backend:** Python (Flask). Lightweight, highly modular micro-framework managing routing, secure session authentication via Google OAuth, and secure file streams.
-* **Database:** SQLite 3. Lightweight relational schema designed for persistent user-session tracking, generated curriculum state caching, and study-metric tracking.
-* **AI Orchestration:** Gemini API Gateway featuring custom fault-tolerant algorithmic model-switching logic.
+Update the structure according to the final repository.
 
----
+## Core Components
 
-## 🛡️ Engineering Highlights & Challenges Solved
+### Document Processing
 
-### 🔄 Resilient API Failover (Model-Switching Controller)
-**Challenge:** Heavy platform usage risked hitting rigid API token limits or localized endpoint throttling, which would break the active classroom session for the student.
-**Solution:** Implemented a proprietary wrapper around the Gemini API client. The system dynamically tracks payload size and API response statuses; if a specific model tier encounters a rate limit or context strain, an automatic, non-blocking fallback mechanism immediately switches tasks to a secondary model cluster, guaranteeing 100% platform uptime.
+Processes uploaded files and extracts relevant information for AI-assisted interactions.
 
-### 📉 Token Footprint Reduction
-**Challenge:** Parsing massive, multi-page syllabus textbooks threatens to trigger LLM token limits and significantly drives up API request latency.
-**Solution:** Avoided a naive "read-and-generate-everything" loop. Designed an internal ingestion parser that maps out high-level content metadata first. The platform reduces a 50-page document into a concise structural roadmap, requesting text generation sequentially on a micro-unit basis rather than a single, high-risk context dump.
+### AI Service Layer
 
----
+Handles communication with language model APIs and manages prompts, responses, and context.
 
-## 📸 Application Preview
+### Database Layer
 
-Below is a visual walkthrough of the fully deployed SAGE-AI platform:
+Stores user data, chat history, and application information.
 
-### User Dashboard & Course Ingestion
-> *Upload your PDF, Word document, or paste raw text syllabus files directly into the orchestration manager.*
-![User Dashboard Screen Placeholder](assets/dashboard_preview.png)
+### Backend API
 
-### Core Unit Classroom View
-> *Access your structured notes, chat dynamically with your contents, and generate audio summaries on the fly.*
-![Classroom View Placeholder](assets/classroom_preview.png)
+Provides structured communication between the frontend and backend.
 
-### Automated Evaluation Matrix
-> *Test your comprehension with integrated AI-evaluated MCQs, flashcards, and cheat sheets.*
-![Quiz & Flashcard Evaluation View Placeholder](assets/evaluation_preview.png)
+## Screenshots
 
----
+### Main Interface
+
+```text
+![Main Interface](screenshots/home.png)
+```
+
+### Document Upload
+
+```text
+![Document Upload](screenshots/upload.png)
+```
+
+### AI Response
+
+```text
+![AI Output](screenshots/response.png)
+```
+
+### Architecture (Optional)
+
+```text
+![Architecture](screenshots/architecture.png)
+```
+
+## What I Learned
+
+Building Sage-AI provided practical experience in:
+
+* Flask application development
+* REST API design
+* LLM integration
+* Prompt engineering
+* Document processing
+* Database management
+* Backend architecture
+* File handling
+* Error handling and validation
+* Structuring modular Python applications
+
+## Future Improvements
+
+* Support for additional document formats
+* Better retrieval and context management
+* Authentication and user management
+* Improved response quality
+* More extensive testing
+* Advanced search capabilities
+* Production deployment
+
+## Status
+
+**Personal Project — Active Development**
+
+Sage-AI is an experimental platform for combining Python backend development, document processing, and modern AI capabilities.
+
+## Author
+
+**Mantra Bareda**
+
+B.Tech — Computer Science & Engineering (Artificial Intelligence)
+Mandsaur University
+
+[GitHub](YOUR_GITHUB_URL) · [LinkedIn](YOUR_LINKEDIN_URL)
+

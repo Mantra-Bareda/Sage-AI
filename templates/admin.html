@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+    <h2 class="page-title">Admin Dashboard</h2>
+    <p class="page-subtitle">User Management</p>
+</section>
+
+<section class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Credits</th>
+                    <th>Joined At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr id="user-row-{{ user.id }}">
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>
+                        <input type="number" value="{{ user.credits }}" class="credit-input" data-userid="{{ user.id }}" style="width: 80px;"/>
+                    </td>
+                    <td>{{ user.created_at.split('T')[0] }}</td>
+                    <td>
+                        <button class="btn sm primary btn-update-credits" data-userid="{{ user.id }}">Save</button>
+                        {% if user.id != g.user.id %}
+                        <button class="btn sm danger btn-delete-user" data-userid="{{ user.id }}">Delete</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const BASE = window.location.pathname.startsWith('/sage') ? '/sage' : '';
+document.addEventListener('DOMContentLoaded', () => {
+    const el = (id) => document.getElementById(id);
+    function setToast(message, isError = false) {
+        const toast = el("toast");
+        if (!toast) return;
+        toast.textContent = message;
+        toast.className = isError ? 'toast error' : 'toast';
+        toast.hidden = false;
+        setTimeout(() => { toast.hidden = true; }, 3000);
+    }
+
+    document.querySelectorAll('.btn-update-credits').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const userId = btn.dataset.userid;
+            const input = document.querySelector(`.credit-input[data-userid="${userId}"]`);
+            const newCredits = parseFloat(input.value);
+
+            try {
+                const res = await fetch(BASE + `/api/admin/user/${userId}/credits`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credits: newCredits })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to update credits');
+                setToast('Credits updated successfully!');
+            } catch (err) {
+                setToast(err.message, true);
+            }
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const userId = btn.dataset.userid;
+            if (!confirm('Are you sure you want to permanently delete this user and all their data? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`/api/admin/user/${userId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to delete user');
+                
+                document.getElementById(`user-row-${userId}`).remove();
+                setToast('User deleted successfully!');
+            } catch (err) {
+                setToast(err.message, true);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

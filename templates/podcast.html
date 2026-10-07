@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div class="head-left">
+    <h2 class="page-title">Podcast Mode</h2>
+    <p class="page-subtitle">Listen to an AI-generated conversation explaining {{ syllabus['course_name'] }}</p>
+  </div>
+  <div class="head-right" style="display:flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+      <div class="mono" id="syllabusId" data-id="{{ syllabus['id'] }}" hidden>{{ syllabus['id'] }}</div>
+      <a class="btn ghost" href="{{ url_for('syllabus_page', syllabus_id=syllabus['id']) }}">Back to Syllabus</a>
+  </div>
+</section>
+
+<div class="two-col">
+    <div class="side" id="podcastSidebar">
+        <div class="side-block">
+            <div class="side-title">Units</div>
+            <div id="podcastUnitsList" class="side-list">
+                <div class="muted">Loading units...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main card" id="podcastMain" style="padding:20px;">
+        <div class="empty big" id="podcastEmptyState">
+            <div class="empty-icon"></div>
+            <div class="empty-title">Select a unit</div>
+            <div class="empty-sub">Choose a unit to generate or listen to its podcast.</div>
+        </div>
+
+        <!-- Generate Screen -->
+        <div id="podcastGenerateScreen" hidden style="text-align: center; padding: 40px 20px;">
+            <div class="empty-icon" style="font-size: 48px; margin-bottom: 20px;">🎙️</div>
+            <h2 style="margin: 0 0 10px 0;" id="pgUnitName">Unit Name</h2>
+            <p class="muted" style="margin-bottom: 30px; max-width: 400px; margin-left: auto; margin-right: auto;">Generate a 5-minute engaging educational podcast script between two AI hosts explaining this unit. (Cost: 1 Credit)</p>
+            <button class="btn primary large" id="btnGeneratePodcast">Generate Podcast</button>
+        </div>
+
+        <!-- Loader -->
+        <div id="podcastLoader" hidden style="text-align: center; padding: 60px 20px;">
+            <style>
+                @keyframes wave { 0% { height: 10px; } 50% { height: 50px; } 100% { height: 10px; } }
+                .audio-wave { display: flex; justify-content: center; align-items: center; gap: 6px; height: 60px; margin-bottom: 20px; }
+                .bar { width: 8px; background: var(--accent); border-radius: 4px; animation: wave 1s ease-in-out infinite; }
+                .bar:nth-child(2) { animation-delay: 0.1s; } .bar:nth-child(3) { animation-delay: 0.2s; }
+                .bar:nth-child(4) { animation-delay: 0.3s; } .bar:nth-child(5) { animation-delay: 0.4s; }
+            </style>
+            <div class="audio-wave">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+            <h2 style="margin: 0; color: var(--accent);">Writing the Script...</h2>
+            <p class="muted" style="margin-top: 10px;">Our AI hosts are preparing their talking points.</p>
+        </div>
+
+        <!-- Player Screen -->
+        <div id="podcastPlayerScreen" hidden class="animate-in">
+            <div class="podcast-layout" style="height: auto; min-height: 400px;">
+                <div class="card well mic-container">
+                    <div class="mic-icon" id="micIcon">🎙️</div>
+                    <h3 id="currentSpeaker" style="margin: 0;">Ready to Play</h3>
+                    <div class="podcast-controls">
+                        <button class="btn ghost" id="btnPodPrev">⏮</button>
+                        <button class="btn primary large" id="btnPodPlayPause" style="border-radius: 50%; width: 64px; height: 64px; padding: 0;">▶</button>
+                        <button class="btn ghost" id="btnPodStop">⏹</button>
+                        <button class="btn ghost" id="btnPodNext">⏭</button>
+                    </div>
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; color: var(--text-muted);"><span id="podProgressLabel">0 / 0</span></div>
+                        <input type="range" id="podSlider" class="progress-slider" min="0" max="100" value="0">
+                    </div>
+                </div>
+                <div class="card" style="max-height: 500px; display: flex; flex-direction: column;">
+                    <h3 style="margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">Transcript</h3>
+                    <div class="transcript-box" id="transcriptBox" style="flex: 1; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

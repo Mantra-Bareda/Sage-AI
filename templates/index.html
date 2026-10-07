@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Transform Your Syllabus into a <span style="color: var(--accent);">Study Engine</span>
+        </h1>
+        <p class="hero-subtitle" style="max-width: 600px; margin: 0 auto 30px;">
+            The ultimate AI study planner. Upload your course syllabus, and Sage AI instantly generates a structured
+            study plan, custom flashcards, and intelligent practice quizzes. Stop organizing and start learning.
+        </p>
+        <div class="hero-cta">
+            {% if g.user %}
+            <a href="{{ url_for('dashboard') }}" class="btn primary large">Go to Dashboard</a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn primary large">Start Studying for Free</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section style="margin-top: 80px;">
+    <h2 class="page-title" style="text-align: center; margin-bottom: 40px;">How Sage AI Works</h2>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; max-width: 1100px; margin: 0 auto;">
+
+        <div class="card" style="text-align: center; flex: 1 1 300px; max-width: 350px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <polyline points="9 15 12 12 15 15"></polyline>
+            </svg>
+            <h3 class="empty-title">1. Upload Syllabus</h3>
+            <p class="muted">Simply upload your PDF syllabus or paste your course text. Our AI reads and structures your
+                entire semester.</p>
+        </div>
+
+        <div class="card" style="text-align: center; flex: 1 1 300px; max-width: 350px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px;">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <rect x="9" y="9" width="6" height="6"></rect>
+                <line x1="9" y1="1" x2="9" y2="4"></line>
+                <line x1="15" y1="1" x2="15" y2="4"></line>
+                <line x1="9" y1="20" x2="9" y2="23"></line>
+                <line x1="15" y1="20" x2="15" y2="23"></line>
+                <line x1="20" y1="9" x2="23" y2="9"></line>
+                <line x1="20" y1="14" x2="23" y2="14"></line>
+                <line x1="1" y1="9" x2="4" y2="9"></line>
+                <line x1="1" y1="14" x2="4" y2="14"></line>
+            </svg>
+            <h3 class="empty-title">2. AI Generation</h3>
+            <p class="muted">Sage automatically extracts topics and generates detailed unit notes, saving you hours of
+                manual highlighting.</p>
+        </div>
+
+        <div class="card" style="text-align: center; flex: 1 1 300px; max-width: 350px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+            <h3 class="empty-title">3. Master the Exam</h3>
+            <p class="muted">Test yourself with AI-generated MCQs, custom flashcards, and spaced repetition to guarantee
+                you ace the final.</p>
+        </div>
+
+    </div>
+</section>
+
+<section style="margin-top: 80px; margin-bottom: 60px; max-width: 800px; margin-left: auto; margin-right: auto;">
+    <h2 class="page-title" style="text-align: center; margin-bottom: 30px;">Frequently Asked Questions</h2>
+
+    <div class="qa">
+        <h3 style="margin: 0 0 8px 0;">Is this AI study planner really free?</h3>
+        <p class="muted" style="margin: 0;">Yes! You start with free credits to upload your syllabus and generate your
+            initial study materials.</p>
+    </div>
+
+    <div class="qa">
+        <h3 style="margin: 0 0 8px 0;">What file types can I upload?</h3>
+        <p class="muted" style="margin: 0;">Currently, you can upload standard PDF files, DOCX files, or simply copy and
+            paste your raw text directly into the planner.</p>
+    </div>
+
+    <div class="qa">
+        <h3 style="margin: 0 0 8px 0;">Does it work for college and high school?</h3>
+        <p class="muted" style="margin: 0;">Absolutely. Whether you are studying for a high school biology test or a
+            college-level computer science final, the AI adapts to the complexity of your uploaded material.</p>
+    </div>
+</section>
+
+{% endblock %}

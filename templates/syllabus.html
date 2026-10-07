@@ -1,0 +1,1178 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.4); }
+    50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.4); }
+}
+@keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -50px); }
+}
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  75% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+.map-node:hover {
+    transform: scale(1.05);
+}
+.map-node.unlocked:hover {
+    transform: scale(1.15) !important;
+}
+</style>
+
+<section class="page-head syllabus-head">
+  <div class="head-left">
+    <h2 class="page-title">
+      Sage AI - {{ syllabus['course_name'] }}
+    </h2>
+    <p class="page-subtitle">
+      {{ syllabus['class_name'] }} • <span class="muted">Language:</span> {{ syllabus['language'] }} •
+      <span class="muted">Syllabus page</span>
+    </p>
+  </div>
+  <div class="head-right" style="display:flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+      <button class="btn ghost" id="btnExportPDF" title="Export to PDF">Export PDF</button>
+  </div>
+</section>
+
+<section class="card" style="display:flex; justify-content:space-between; align-items:center; padding: 24px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+  <div style="display:flex; align-items:center; gap:10px;">
+      <div class="pill soft">Syllabus ID</div>
+      <div class="mono" id="syllabusId" data-id="{{ syllabus['id'] }}">{{ syllabus['id'] }}</div>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap: wrap;">
+      <a class="btn ghost" href="{{ url_for('dashboard') }}">Back</a>
+      <a class="btn" href="{{ url_for('podcast_page', syllabus_id=syllabus['id']) }}" style="border-color: var(--accent); color: var(--accent);">Podcast Mode</a>
+      <button class="btn ghost" id="btnOpenCustomizeModal" type="button" style="border-color: #3b82f6; color: #3b82f6;">
+          Customize Settings
+      </button>
+      <button class="btn primary" id="btnGenerateAll" type="button">
+          Generate All Content
+          <span class="spinner sm" aria-hidden="true" hidden></span>
+      </button>
+  </div>
+</section>
+
+<section class="card tabs-wrap">
+  <div class="tabs" role="tablist" aria-label="Syllabus tabs">
+    <button class="tab active" type="button" data-tab="notes" role="tab" aria-selected="true">Notes</button>
+    <button class="tab" type="button" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>
+    <button class="tab" type="button" data-tab="flashcards" role="tab" aria-selected="false">Flash Cards</button>
+    <button class="tab" type="button" data-tab="written" role="tab" aria-selected="false">Written Questions</button>
+    <button class="tab" type="button" data-tab="extra" role="tab" aria-selected="false">Extra Notes</button>
+  </div>
+</section>
+
+<section id="customizeModal" class="card" hidden style="margin-bottom: 20px; border-left: 4px solid #f59e0b; padding: 20px; box-sizing: border-box; position: relative;">
+    <button class="btn ghost sm" id="btnCloseCustomize" type="button" style="position: absolute; right: 10px; top: 10px;">X</button>
+    <h3 style="margin-bottom: 15px;">Customize Your Notes</h3>
+    <form id="customizeForm">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" name="exam_oriented" id="custExamOriented"> <span>Exam-Oriented (Prioritize facts and definitions)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" name="code_heavy" id="custCodeHeavy"> <span>Code & Implementation Heavy (More code snippets)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" name="eli5_analogies" id="custEli5"> <span>ELI5 Analogies (Simple language and analogies)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" name="step_by_step" id="custStepByStep"> <span>Step-by-Step Walkthroughs (Numbered steps)</span>
+            </label>
+        </div>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Custom AI Instructions</label>
+        <textarea name="custom_prompt_text" id="custPrompt" rows="3" maxlength="500" placeholder="e.g., Explain everything using Marvel movie analogies..." style="margin-bottom: 15px; width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px;"></textarea>
+        <button type="button" class="btn primary" id="btnSaveCustomize">Save & Regenerate All</button>
+    </form>
+</section>
+
+<section id="progressModal" class="card" hidden style="margin-bottom: 20px; border-left: 4px solid #3b82f6; padding: 20px; box-sizing: border-box; text-align: center;">
+  <img src="{{ url_for('static', filename='loading_animation.gif') }}" alt="Loading" style="width: 120px; margin: 0 auto 15px auto; display: block; border-radius: 8px;">
+  <div style="display: flex; justify-content: space-between; margin-bottom: 12px; text-align: left;">
+    <strong id="progressText">Generating...</strong>
+    <span id="progressPercent" class="muted">0%</span>
+  </div>
+  <div style="background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; height: 10px; width: 100%;">
+    <div id="progressBar" style="background: #3b82f6; height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 6px;"></div>
+  </div>
+</section>
+
+<section class="content-area">
+  <!-- NOTES -->
+  <div class="tab-panel active" id="panel-notes" data-panel="notes">
+    <div class="panel-head-row">
+      <div>
+        <h3 class="panel-title">Unit-wise Notes</h3>
+        <p class="panel-subtitle muted">Open a unit to read the generated notes.</p>
+        
+        <div class="well" id="ttsControls" style="display:flex; gap: 10px; margin-top: 10px; padding: 12px; align-items: center; max-width: max-content;">
+            <button class="btn primary sm" id="btnTTSPlay">Read Notes</button>
+            <button class="btn ghost sm" id="btnTTSStop">Stop</button>
+            <span class="muted" style="font-size: 0.9em; margin-left: 10px;">Speed:</span>
+            <select id="ttsSpeed" style="padding: 6px;">
+                <option value="0.8">Slow</option><option value="1" selected>Normal</option><option value="1.5">Fast</option>
+            </select>
+        </div>
+      </div>
+      <div class="row-actions" style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+        <div style="display: inline-flex; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">
+            <button id="btnViewTraditional" class="btn active" style="border:none; border-radius:0; background: rgba(255,255,255,0.15);">Traditional Notes</button>
+            <button id="btnViewSwipe" class="btn ghost" style="border:none; border-radius:0;">Swipe Cards</button>
+            <button id="btnViewMap" class="btn ghost" style="border:none; border-radius:0;">Gamified Map</button>
+        </div>
+        <button class="btn" type="button" id="btnRefreshNotes">Refresh</button>
+      </div>
+    </div>
+
+    <div class="three-col">
+      <div class="side" id="notesUnits">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="middle notes-panel card" id="notesMain" style="padding:20px; margin:0; height: 75vh; min-height: 600px; overflow-y: auto;">
+        <div class="empty big">
+          <div class="empty-icon"></div>
+          <div class="empty-title">No unit selected</div>
+          <div class="empty-sub">Generate notes first, then click a unit.</div>
+        </div>
+      </div>
+
+      <div class="middle notes-panel card" id="swipeMain" style="padding:20px; margin:0; display:none; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 40px; position: relative; height: auto; min-height: 75vh;">
+          <!-- Swipe Cards content -->
+          <div id="swipeTopicSelector" style="margin-bottom: 20px; width: 100%; max-width: 400px;">
+              <select id="swipeTopicSelect" class="neumorphic-input" style="width: 100%; padding: 8px;">
+                  <option value="">Select a Topic to Swipe</option>
+              </select>
+          </div>
+          
+          <div id="swipeEmptyState" class="empty big" style="display: block;">
+              <div class="empty-icon"></div>
+              <div class="empty-title">No topic selected</div>
+              <div class="empty-sub">Select a topic from the dropdown to start swiping.</div>
+          </div>
+          
+          <div id="swipeWorkspace" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+              <div id="swipeTracker" style="margin-bottom: 15px; font-size: 0.9em; font-weight: bold; color: #9ca3af;">Card 0 of 0</div>
+              
+              <div id="swipeCardContainer" style="width: 100%; max-width: 400px; min-height: 300px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: center; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: transform 0.2s ease, opacity 0.2s ease; position: relative; cursor: grab; touch-action: pan-y;">
+                  <button id="btnStarCard" class="btn ghost sm" style="position: absolute; top: 10px; right: 10px; padding: 5px; font-size: 1.2em; border: none;">☆</button>
+                  <div id="swipeCardType" style="font-size: 0.75em; text-transform: uppercase; letter-spacing: 1.5px; color: #3b82f6; margin-bottom: 12px; font-weight: bold;">TYPE</div>
+                  <h4 id="swipeCardTitle" style="margin-bottom: 15px; font-size: 1.3em;">Title</h4>
+                  <div id="swipeCardContent" style="font-size: 1.1em; line-height: 1.6; color: #e5e7eb; overflow-y: auto; max-height: 50vh; overscroll-behavior-y: auto; scrollbar-width: thin;">Content</div>
+              </div>
+              
+              <div style="display: flex; gap: 15px; margin-top: 25px; width: 100%; max-width: 400px; justify-content: center;">
+                  <button class="btn ghost" id="btnReviewAgain" style="border-color: #ef4444; color: #ef4444; flex: 1;">Review Again</button>
+                  <button class="btn primary" id="btnGotIt" style="background: #10b981; border-color: #10b981; flex: 1;">Got It</button>
+              </div>
+              
+              <div style="display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-top: 20px;">
+                 <button class="btn ghost sm" id="btnSwipePrev" style="border: none;">&larr; Previous</button>
+                 <button class="btn ghost sm" id="btnSwipeNext" style="border: none;">Next &rarr;</button>
+              </div>
+          </div>
+      </div>
+
+      <div class="middle notes-panel card" id="mapMain" style="padding:20px; margin:0; display:none; flex-direction: column; align-items: center; height: 75vh; min-height: 600px; overflow-y: auto; background: rgba(0,0,0,0.2);">
+          <div style="width: 100%; text-align: center; margin-bottom: 20px;">
+              <h2 style="margin: 0; color: #fff;">Knowledge Map</h2>
+              <p class="muted">Follow the path to master your syllabus</p>
+          </div>
+          <div id="mapContainer" style="width: 600px; max-width: 100%; padding: 20px 0; display: flex; flex-direction: column; align-items: center; position: relative;">
+          </div>
+      </div>
+
+      <!-- Boss Fight Modal -->
+      <div id="bossFightModal" class="modal" hidden>
+        <div class="modal-content" style="max-width: 600px; padding: 0; background: var(--bg-color); border: 2px solid var(--border-color); overflow: hidden;">
+            <div id="bossHealthBar" style="padding: 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;"><span style="font-size:1.5em;">😈</span> Boss Fight</h3>
+                <div id="bossHearts" style="display: flex; gap: 10px; font-size: 1.5em;">
+                    <span class="heart active">❤️</span>
+                    <span class="heart active">❤️</span>
+                    <span class="heart active">❤️</span>
+                </div>
+            </div>
+            
+            <div id="bossFightBody" style="padding: 30px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+                <!-- Questions injected here -->
+            </div>
+            
+            <div id="bossVictoryScreen" style="padding: 30px; display: none; text-align: center;">
+                <div style="font-size: 4em; margin-bottom: 20px;">🏆</div>
+                <h2>Victory!</h2>
+                <p style="font-size: 1.2em; color: var(--muted-color); margin-bottom: 20px;">You defeated the boss and mastered this unit!</p>
+                <div class="pill" style="display: inline-block; background: rgba(16,185,129,0.2); color: #10b981; padding: 10px 20px; font-size: 1.2em; font-weight: bold; border: 1px solid #10b981; margin-bottom: 30px;">
+                    +50 Bonus EXP
+                </div><br>
+                <button class="btn primary" id="btnBossVictoryClose">Continue to Next World</button>
+            </div>
+            
+            <div id="bossDefeatScreen" style="padding: 30px; display: none; text-align: center;">
+                <div style="font-size: 4em; margin-bottom: 20px;">💀</div>
+                <h2 style="color: #ef4444;">Defeated</h2>
+                <p style="font-size: 1.2em; color: var(--muted-color); margin-bottom: 30px;">Don't give up! Review your notes and try again.</p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn ghost" id="btnBossDefeatClose">Study More</button>
+                    <button class="btn primary" id="btnBossRetry">Try Again</button>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="right chat-panel card" id="notesChat" style="padding:0; display:flex; flex-direction:column; margin:0;">
+        <div class="empty big"><div class="empty-icon"></div><div class="empty-title">AI Chat</div><div class="empty-sub">Select a unit first</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="tab-panel" id="panel-quiz" data-panel="quiz">
+    <div class="panel-head-row">
+      <div>
+        <h3 class="panel-title">Quiz (Unit MCQs) & Mastery Loop</h3>
+        <p class="panel-subtitle muted">Pick a unit for a mixed quiz, or pick a topic to master.</p>
+      </div>
+      <div class="row-actions" style="display: flex; gap: 10px; align-items: center;">
+        <select id="quizMasterySelect" class="form-control" style="width: auto;">
+            <option value="">-- Select a Topic to Master --</option>
+        </select>
+        <button class="btn primary" type="button" id="btnStartMastery">Master Topic</button>
+        <button class="btn" type="button" id="btnRefreshPractice">Refresh</button>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="side" id="practiceSidebar">
+        <!-- Unit + topic list -->
+        <div class="side-block">
+          <div class="side-title">Units</div>
+          <div id="practiceUnits" class="side-list"></div>
+        </div>
+      </div>
+
+      <div class="main" id="practiceMain">
+        <div class="empty big">
+          <div class="empty-icon"></div>
+          <div class="empty-title">Select a unit</div>
+          <div class="empty-sub">Then start the MCQ quiz for that unit.</div>
+        </div>
+
+        <div id="quizWrap" class="quiz-wrap" hidden>
+          <div class="quiz-head">
+            <div class="quiz-kicker mono" id="quizMeta"></div>
+            <div class="quiz-controls">
+              <div class="timer" id="quizTimer">00:00</div>
+              <button class="btn ghost" type="button" id="btnRestartQuiz">Restart</button>
+            </div>
+          </div>
+
+          <div class="quiz-body" id="quizBody">
+            <!-- Questions -->
+          </div>
+
+          <div class="quiz-footer">
+            <button class="btn primary" type="button" id="btnSubmitQuiz">Submit</button>
+            <div class="quiz-result" id="quizResult" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div id="masteryWrap" class="quiz-wrap" hidden>
+          <div class="quiz-head">
+            <div class="quiz-kicker mono" id="masteryMeta">Mastery Mode</div>
+            <div class="quiz-controls">
+                <span id="masteryStreak" style="color: #10b981; font-weight: bold; margin-right: 15px;">🔥 Streak: 0/5</span>
+                <button class="btn ghost" type="button" id="btnExitMastery">Exit</button>
+            </div>
+          </div>
+
+          <div class="quiz-body" id="masteryBody" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 250px;">
+            <!-- Questions -->
+            <div id="masteryLoading" hidden>Loading questions...</div>
+          </div>
+
+          <div class="quiz-footer" style="justify-content: flex-end;">
+            <button class="btn primary" type="button" id="btnMasteryNext" hidden>Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="tab-panel" id="panel-flashcards" data-panel="flashcards">
+    <div class="panel-head-row">
+      <div>
+        <h3 class="panel-title">Flash Cards</h3>
+        <p class="panel-subtitle muted">Quick recall and definitions.</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="side"><div id="flashUnits" class="side-list"></div></div>
+      <div class="main card" id="flashMain" style="padding:20px;"></div>
+    </div>
+  </div>
+
+  <!-- WRITTEN QUESTIONS -->
+  <div class="tab-panel" id="panel-written" data-panel="written">
+    <div class="panel-head-row">
+      <div>
+        <h3 class="panel-title">Written Questions</h3>
+        <p class="panel-subtitle muted">Short, Medium, and Long study questions.</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="side"><div id="writtenUnits" class="side-list"></div></div>
+      <div class="main card" id="writtenMain" style="padding:20px;"></div>
+    </div>
+  </div>
+
+  <!-- EXTRA NOTES -->
+  <div class="tab-panel" id="panel-extra" data-panel="extra">
+    <div class="panel-head-row">
+      <div>
+        <h3 class="panel-title">Extra Notes</h3>
+        <p class="panel-subtitle muted">Upload additional PDFs, images, or type text to generate more notes.</p>
+      </div>
+      <div class="row-actions">
+        <button class="btn" type="button" id="btnRefreshExtra">Refresh</button>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="side" id="extraSidebar">
+        <div class="side-block">
+          <div class="side-title">Materials</div>
+          <div id="extraMaterialsList" class="side-list"></div>
+          <div style="padding: 10px;">
+            <button class="btn ghost" id="btnAddExtraMaterial" style="width: 100%;">Add Material</button>
+          </div>
+        </div>
+      </div>
+      <div class="main card" id="extraMain" style="padding:20px; background:transparent; border:none; box-shadow:none;"></div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- Include marked.js for markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- Include html2pdf.js for exporting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const btnOpen = document.getElementById("btnOpenCustomizeModal");
+    const btnClose = document.getElementById("btnCloseCustomize");
+    const modal = document.getElementById("customizeModal");
+    const btnSave = document.getElementById("btnSaveCustomize");
+    const sylId = document.getElementById("syllabusId").dataset.id;
+    
+    if (btnOpen) btnOpen.addEventListener("click", () => modal.hidden = false);
+    if (btnClose) btnClose.addEventListener("click", () => modal.hidden = true);
+    
+    if (btnSave) {
+        btnSave.addEventListener("click", async () => {
+            btnSave.disabled = true;
+            btnSave.textContent = "Saving...";
+            
+            const payload = {
+                exam_oriented: document.getElementById("custExamOriented").checked,
+                code_heavy: document.getElementById("custCodeHeavy").checked,
+                eli5_analogies: document.getElementById("custEli5").checked,
+                step_by_step: document.getElementById("custStepByStep").checked,
+                custom_prompt_text: document.getElementById("custPrompt").value
+            };
+            
+            try {
+                const res = await fetch(`/api/syllabus/${sylId}/customize`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                    modal.hidden = true;
+                    const btnGen = document.getElementById("btnGenerateAll");
+                    if (btnGen) btnGen.click();
+                } else {
+                    alert("Failed to save customization settings.");
+                }
+            } catch(e) {
+                console.error(e);
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = "Save & Regenerate All";
+            }
+        });
+    }
+
+    // View Switcher logic
+    const btnTraditional = document.getElementById("btnViewTraditional");
+    const btnSwipe = document.getElementById("btnViewSwipe");
+    const btnMap = document.getElementById("btnViewMap");
+    const notesMain = document.getElementById("notesMain");
+    const swipeMain = document.getElementById("swipeMain");
+    const mapMain = document.getElementById("mapMain");
+    
+    if (btnTraditional && btnSwipe && btnMap) {
+        btnTraditional.addEventListener("click", () => {
+            localStorage.setItem("sagePreferView", "traditional");
+            btnTraditional.classList.add("active");
+            btnTraditional.style.background = "rgba(255,255,255,0.15)";
+            btnSwipe.classList.remove("active");
+            btnSwipe.style.background = "transparent";
+            btnMap.classList.remove("active");
+            btnMap.style.background = "transparent";
+            
+            notesMain.style.display = "block";
+            swipeMain.style.display = "none";
+            mapMain.style.display = "none";
+        });
+        
+        btnSwipe.addEventListener("click", () => {
+            localStorage.setItem("sagePreferView", "swipe");
+            btnSwipe.classList.add("active");
+            btnSwipe.style.background = "rgba(255,255,255,0.15)";
+            btnTraditional.classList.remove("active");
+            btnTraditional.style.background = "transparent";
+            btnMap.classList.remove("active");
+            btnMap.style.background = "transparent";
+            
+            notesMain.style.display = "none";
+            swipeMain.style.display = "flex";
+            mapMain.style.display = "none";
+            populateSwipeTopics();
+        });
+
+        btnMap.addEventListener("click", () => {
+            localStorage.setItem("sagePreferView", "map");
+            btnMap.classList.add("active");
+            btnMap.style.background = "rgba(255,255,255,0.15)";
+            btnTraditional.classList.remove("active");
+            btnTraditional.style.background = "transparent";
+            btnSwipe.classList.remove("active");
+            btnSwipe.style.background = "transparent";
+            
+            notesMain.style.display = "none";
+            swipeMain.style.display = "none";
+            mapMain.style.display = "flex";
+            
+            loadGamifiedMap();
+        });
+        
+        // Initial load check
+        const prefView = localStorage.getItem("sagePreferView") || "map";
+        if (prefView === "traditional") {
+            btnTraditional.click();
+        } else if (prefView === "swipe") {
+            btnSwipe.click();
+        } else {
+            btnMap.click();
+        }
+    }
+
+    async function loadGamifiedMap() {
+        try {
+            const res = await fetch(`/api/syllabus/${sylId}/map`);
+            const data = await res.json();
+            if (data.ok && data.map) {
+                renderGamifiedMap(data.map);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function getWorldColor(idx) {
+        const colors = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
+        return colors[idx % colors.length];
+    }
+
+    function renderGamifiedMap(mapData) {
+        const container = document.getElementById("mapContainer");
+        if (!container) return;
+        container.innerHTML = "";
+        
+        mapData.forEach((world, wIdx) => {
+            const worldBox = document.createElement("div");
+            worldBox.style.cssText = `width: 100%; max-width: 500px; background: rgba(255,255,255,0.03); border: 2px solid ${getWorldColor(wIdx)}; border-radius: 16px; padding: 20px; margin-bottom: 40px; display: flex; flex-direction: column; align-items: center; position: relative;`;
+            
+            const title = document.createElement("h3");
+            title.style.cssText = `color: ${getWorldColor(wIdx)}; margin-top: 0; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; font-size: 1.2em; text-align: center;`;
+            title.textContent = `World ${world.unit_index + 1}: ${world.title}`;
+            worldBox.appendChild(title);
+            
+            const nodesContainer = document.createElement("div");
+            nodesContainer.style.cssText = "position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 20px 0;";
+            
+            const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svgPath.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;";
+            nodesContainer.appendChild(svgPath);
+            
+            let pathD = "";
+            let prevPoint = null;
+            
+            world.nodes.forEach((node, nIdx) => {
+                const isLeft = (nIdx % 2 === 0);
+                const nodeWrap = document.createElement("div");
+                nodeWrap.style.cssText = `z-index: 1; display: flex; flex-direction: column; align-items: center; width: 140px; transform: translateX(${isLeft ? '-70px' : '70px'}); cursor: ${node.status === 'locked' ? 'not-allowed' : 'pointer'};`;
+                
+                const circle = document.createElement("div");
+                circle.className = `map-node ${node.status}`;
+                let circleStyle = `width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5em; font-weight: bold; color: white; transition: all 0.2s ease;`;
+                
+                if (node.status === 'completed') {
+                    circleStyle += `background: #10b981; border: 3px solid #059669; box-shadow: 0 4px 10px rgba(16,185,129,0.4);`;
+                    circle.innerHTML = "⭐";
+                } else if (node.status === 'unlocked') {
+                    circleStyle += `background: ${getWorldColor(wIdx)}; border: 3px solid #fff; box-shadow: 0 0 15px ${getWorldColor(wIdx)}, 0 4px 10px rgba(0,0,0,0.3); animation: pulse 2s infinite;`;
+                    circle.innerHTML = node.is_boss ? "😈" : "📖";
+                } else {
+                    circleStyle += `background: #374151; border: 3px solid #4b5563; opacity: 0.7;`;
+                    circle.innerHTML = "🔒";
+                }
+                
+                if (node.is_boss && node.status !== 'locked') {
+                    circleStyle += `width: 75px; height: 75px; border-radius: 12px; font-size: 2em;`;
+                }
+                
+                circle.style.cssText = circleStyle;
+                
+                const label = document.createElement("div");
+                label.style.cssText = `margin-top: 10px; font-size: 0.8em; text-align: center; color: ${node.status === 'locked' ? '#6b7280' : '#e5e7eb'}; font-weight: bold; line-height: 1.2; word-break: break-word;`;
+                label.textContent = node.title;
+                
+                nodeWrap.appendChild(circle);
+                nodeWrap.appendChild(label);
+                
+                if (node.status !== 'locked') {
+                    nodeWrap.addEventListener("click", () => {
+                        if (node.is_boss) {
+                            startBossFight(node.id);
+                        } else {
+                            // Automatically jump to swipe mode for this topic
+                            if (!swipeTopicSelect) return;
+                            swipeTopicSelect.value = node.id;
+                            swipeTopicSelect.dispatchEvent(new Event('change'));
+                            if (btnSwipe) btnSwipe.click();
+                        }
+                    });
+                }
+                
+                nodesContainer.appendChild(nodeWrap);
+                
+                // Assuming container width is ~460px (500px - 40px padding)
+                // Center is 230. Left offset is -70 => 160. Right offset is +70 => 300.
+                const cx = isLeft ? 160 : 300;
+                const cy = 20 + nIdx * 100 + (node.is_boss ? 7.5 : 0) + 30;
+                
+                if (prevPoint) {
+                    pathD += ` M ${prevPoint.x} ${prevPoint.y} C ${prevPoint.x} ${prevPoint.y + 50}, ${cx} ${cy - 50}, ${cx} ${cy}`;
+                }
+                prevPoint = {x: cx, y: cy};
+            });
+            
+            const pathElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pathElem.setAttribute("d", pathD);
+            pathElem.setAttribute("stroke", "rgba(255,255,255,0.1)");
+            pathElem.setAttribute("stroke-width", "8");
+            pathElem.setAttribute("fill", "none");
+            pathElem.setAttribute("stroke-linecap", "round");
+            svgPath.appendChild(pathElem);
+            
+            worldBox.appendChild(nodesContainer);
+            container.appendChild(worldBox);
+        });
+    }
+
+    let currentCards = [];
+    let currentCardIndex = 0;
+    let swipeTopicSelect = document.getElementById("swipeTopicSelect");
+    
+    async function populateSwipeTopics() {
+        if (!swipeTopicSelect || swipeTopicSelect.children.length > 1) return;
+        try {
+            const res = await fetch(`/api/syllabus/${sylId}/data`);
+            const data = await res.json();
+            const notes = data.notes;
+            
+            swipeTopicSelect.innerHTML = '<option value="">Select a Topic to Swipe</option>';
+            if (notes && notes.units) {
+                notes.units.forEach((u, uIdx) => {
+                    const optgroup = document.createElement("optgroup");
+                    optgroup.label = u.unit_name || `Unit ${uIdx + 1}`;
+                    if (u.topics) {
+                        u.topics.forEach((t, tIdx) => {
+                            const opt = document.createElement("option");
+                            opt.value = `${sylId}|${uIdx}|${tIdx}`;
+                            opt.textContent = t.topic_name || `Topic ${tIdx + 1}`;
+                            optgroup.appendChild(opt);
+                        });
+                    }
+                    swipeTopicSelect.appendChild(optgroup);
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    if (swipeTopicSelect) {
+        swipeTopicSelect.addEventListener("change", async (e) => {
+            const topicId = e.target.value;
+            if (!topicId) {
+                document.getElementById("swipeEmptyState").style.display = "block";
+                document.getElementById("swipeWorkspace").style.display = "none";
+                return;
+            }
+            document.getElementById("swipeEmptyState").style.display = "none";
+            document.getElementById("swipeWorkspace").style.display = "flex";
+            
+            try {
+                const res = await fetch(`/api/topics/${encodeURIComponent(topicId)}/cards`);
+                const data = await res.json();
+                if (data.ok && data.cards) {
+                    currentCards = data.cards;
+                    currentCardIndex = 0;
+                    renderCurrentCard();
+                }
+            } catch (err) { console.error(err); }
+        });
+    }
+
+    function renderCurrentCard() {
+        if (currentCards.length === 0) return;
+        const card = currentCards[currentCardIndex];
+        document.getElementById("swipeTracker").textContent = `Card ${currentCardIndex + 1} of ${currentCards.length}`;
+        document.getElementById("swipeCardType").textContent = card.type || "INFO";
+        document.getElementById("swipeCardTitle").textContent = card.title || "";
+        document.getElementById("swipeCardContent").innerHTML = typeof marked !== 'undefined' ? marked.parse(card.content || "") : card.content;
+    }
+
+    const btnPrev = document.getElementById("btnSwipePrev");
+    const btnNext = document.getElementById("btnSwipeNext");
+    const btnGotIt = document.getElementById("btnGotIt");
+    const btnReviewAgain = document.getElementById("btnReviewAgain");
+    const btnStar = document.getElementById("btnStarCard");
+    let topicCompletedFired = false;
+    
+    if (btnPrev) btnPrev.addEventListener("click", () => {
+        if (currentCardIndex > 0) { currentCardIndex--; renderCurrentCard(); }
+    });
+    
+    if (btnNext) btnNext.addEventListener("click", () => {
+        if (currentCardIndex < currentCards.length - 1) { 
+            currentCardIndex++; 
+            renderCurrentCard(); 
+        } else if (currentCardIndex === currentCards.length - 1) {
+            if (!topicCompletedFired) completeTopic();
+            
+            if (swipeTopicSelect.selectedIndex < swipeTopicSelect.options.length - 1) {
+                swipeTopicSelect.selectedIndex++;
+                swipeTopicSelect.dispatchEvent(new Event('change'));
+            } else {
+                document.getElementById("swipeWorkspace").style.display = "none";
+                const emptyState = document.getElementById("swipeEmptyState");
+                emptyState.style.display = "block";
+                const emptyTitle = emptyState.querySelector(".empty-title");
+                const emptySub = emptyState.querySelector(".empty-sub");
+                if (emptyTitle) emptyTitle.textContent = "Section Completed!";
+                if (emptySub) emptySub.textContent = "Select another topic or check the map.";
+            }
+        }
+    });
+
+    async function sendSignal(signal) {
+        if (currentCards.length === 0) return;
+        const chunkId = currentCards[currentCardIndex].chunk_id;
+        try {
+            await fetch(`/api/cards/${encodeURIComponent(chunkId)}/signal`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ signal })
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    if (btnGotIt) btnGotIt.addEventListener("click", () => {
+        sendSignal("got_it");
+        if (btnNext) btnNext.click();
+    });
+    
+    if (btnReviewAgain) btnReviewAgain.addEventListener("click", () => {
+        sendSignal("review_again");
+        if (btnNext) btnNext.click();
+    });
+    
+    let isStarred = false;
+    if (btnStar) btnStar.addEventListener("click", () => {
+        isStarred = !isStarred;
+        btnStar.style.color = isStarred ? "#f59e0b" : "inherit";
+        btnStar.textContent = isStarred ? "★" : "☆";
+        sendSignal(isStarred ? "starred" : "unstarred");
+    });
+
+    async function completeTopic(topicIdValue = null) {
+        const topicId = topicIdValue || swipeTopicSelect.value;
+        if (!topicId) return;
+        try {
+            const res = await fetch(`/api/topics/${encodeURIComponent(topicId)}/complete`, { method: "POST" });
+            const data = await res.json();
+            topicCompletedFired = true;
+            
+            // Show toast properly
+            const toast = document.getElementById("toast");
+            if (toast) {
+                toast.textContent = "Topic Completed!";
+                toast.hidden = false;
+                setTimeout(() => toast.hidden = true, 3000);
+            }
+            
+            // Handle EXP Reward
+            if (data.ok && data.exp_awarded > 0) {
+                const expEl = document.getElementById("hudExp");
+                const levelEl = document.getElementById("hudLevel");
+                if (expEl && levelEl) {
+                    let currentExp = parseInt(expEl.textContent) || 0;
+                    currentExp += data.exp_awarded;
+                    expEl.textContent = currentExp;
+                    levelEl.textContent = Math.floor(currentExp / 100) + 1;
+                    
+                    // Flash HUD
+                    const hud = document.getElementById("globalExpHud");
+                    if (hud) {
+                        hud.style.transform = "scale(1.15)";
+                        hud.style.boxShadow = "0 0 20px #10b981";
+                        setTimeout(() => {
+                            hud.style.transform = "";
+                            hud.style.boxShadow = "0 2px 8px rgba(16,185,129,0.3)";
+                        }, 600);
+                    }
+                }
+                
+                // Show floating exp text
+                const floatEl = document.createElement("div");
+                floatEl.textContent = `+${data.exp_awarded} EXP`;
+                floatEl.style.cssText = "position: fixed; bottom: 20%; left: 50%; transform: translateX(-50%); color: #10b981; font-weight: bold; font-size: 28px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 9999; animation: floatUp 2s forwards;";
+                document.body.appendChild(floatEl);
+                setTimeout(() => floatEl.remove(), 2000);
+            }
+            
+        } catch (e) { console.error(e); }
+    }
+
+    // Touch handling for swipes
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const swipeContainer = document.getElementById("swipeCardContainer");
+    
+    if (swipeContainer) {
+        swipeContainer.addEventListener("touchstart", e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        swipeContainer.addEventListener("touchmove", e => {
+            const currentX = e.changedTouches[0].screenX;
+            const diff = currentX - touchStartX;
+            if (Math.abs(diff) < 150) {
+                swipeContainer.style.transform = `translateX(${diff}px) rotate(${diff * 0.05}deg)`;
+            }
+        });
+        swipeContainer.addEventListener("touchend", e => {
+            touchEndX = e.changedTouches[0].screenX;
+            swipeContainer.style.transform = "";
+            if (touchEndX < touchStartX - 50) {
+                if (btnReviewAgain) btnReviewAgain.click();
+            } else if (touchEndX > touchStartX + 50) {
+                if (btnGotIt) btnGotIt.click();
+            }
+        });
+    }
+    
+    // Keyboard arrow handling
+    document.addEventListener("keydown", (e) => {
+        if (swipeMain && swipeMain.style.display !== "none") {
+            if (e.key === "ArrowLeft") {
+                if (btnPrev) btnPrev.click();
+            } else if (e.key === "ArrowRight") {
+                if (btnNext) btnNext.click();
+            }
+        }
+    });
+
+    // Unified completion tracker: scroll to bottom of Traditional Notes
+    if (notesMain) {
+        notesMain.addEventListener("scroll", () => {
+            if (notesMain.style.display !== "none") {
+                if (notesMain.scrollTop + notesMain.clientHeight >= notesMain.scrollHeight - 10) {
+                    const activeUnitNode = document.querySelector("#notesUnits .side-item.active");
+                    if (activeUnitNode && !notesMain.dataset.completed) {
+                        notesMain.dataset.completed = "true"; // debounce
+                        const idx = Array.from(activeUnitNode.parentNode.children).indexOf(activeUnitNode);
+                        const topicId = `${sylId}|${idx}|0`; 
+                        completeTopic(topicId); // Complete the first topic conceptually
+                    }
+                }
+            }
+        });
+    }
+
+    // Boss Fight Logic
+    let currentBossAttempt = null;
+    let currentBossQuestions = [];
+    let currentBossQIndex = 0;
+    let currentBossUnitId = null;
+
+    window.startBossFight = async function(unitId) {
+        currentBossUnitId = unitId;
+        try {
+            const res = await fetch(`/api/units/${encodeURIComponent(unitId)}/boss-fight/start`, { method: "POST" });
+            const data = await res.json();
+            if (data.ok) {
+                currentBossAttempt = data.attempt_id;
+                currentBossQuestions = data.questions;
+                currentBossQIndex = 0;
+                openBossModal(data.hp);
+            } else {
+                alert(data.error || "Failed to start Boss Fight.");
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    function openBossModal(hp) {
+        document.getElementById("bossFightModal").hidden = false;
+        document.getElementById("bossVictoryScreen").style.display = "none";
+        document.getElementById("bossDefeatScreen").style.display = "none";
+        document.getElementById("bossFightBody").style.display = "flex";
+        updateBossHearts(hp);
+        renderBossQuestion();
+    }
+
+    function updateBossHearts(hp) {
+        const hearts = document.querySelectorAll("#bossHearts .heart");
+        hearts.forEach((h, i) => {
+            if (i < hp) {
+                h.textContent = "❤️";
+                h.style.opacity = "1";
+            } else {
+                h.textContent = "🖤";
+                h.style.opacity = "0.5";
+            }
+        });
+    }
+
+    function triggerDamageAnimation() {
+        const modalContent = document.querySelector("#bossFightModal .modal-content");
+        modalContent.style.animation = "shake 0.5s ease-in-out";
+        modalContent.style.borderColor = "#ef4444";
+        setTimeout(() => {
+            modalContent.style.animation = "";
+            modalContent.style.borderColor = "var(--border-color)";
+        }, 500);
+    }
+
+    function renderBossQuestion() {
+        const body = document.getElementById("bossFightBody");
+        if (currentBossQIndex >= currentBossQuestions.length) return;
+        
+        const q = currentBossQuestions[currentBossQIndex];
+        let opts = q.options;
+        if (typeof opts === 'object' && !Array.isArray(opts)) opts = Object.values(opts);
+        
+        body.innerHTML = `
+            <h3 style="margin-bottom: 20px; line-height: 1.5;">${q.question}</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                ${opts.map((opt, i) => `<button class="btn ghost boss-opt-btn" data-index="${i}" style="text-align: left; padding: 15px; height: auto; white-space: normal;">${opt}</button>`).join('')}
+            </div>
+        `;
+        
+        document.querySelectorAll(".boss-opt-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const ansIdx = e.target.getAttribute("data-index");
+                document.querySelectorAll(".boss-opt-btn").forEach(b => b.disabled = true);
+                
+                // visually mark selected
+                e.target.style.background = "var(--primary-color)";
+                e.target.style.color = "#fff";
+                
+                await submitBossAnswer(ansIdx);
+            });
+        });
+    }
+
+    async function submitBossAnswer(answerIndex) {
+        const isFinal = currentBossQIndex === currentBossQuestions.length - 1;
+        try {
+            const res = await fetch(`/api/units/${encodeURIComponent(currentBossUnitId)}/boss-fight/answer`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    attempt_id: currentBossAttempt,
+                    q_index: currentBossQIndex,
+                    answer: answerIndex,
+                    is_final_question: isFinal
+                })
+            });
+            const data = await res.json();
+            
+            if (data.ok) {
+                if (!data.correct) {
+                    triggerDamageAnimation();
+                    updateBossHearts(data.hp);
+                    // Highlight correct answer
+                    const btns = document.querySelectorAll(".boss-opt-btn");
+                    btns[data.correct_answer].style.background = "#10b981";
+                    btns[data.correct_answer].style.color = "#fff";
+                    
+                    // Mark selected as wrong if not correct (it was already highlighted primary)
+                    const selectedBtn = document.querySelector(`.boss-opt-btn[data-index="${answerIndex}"]`);
+                    if (selectedBtn) {
+                        selectedBtn.style.background = "#ef4444";
+                        selectedBtn.style.color = "#fff";
+                    }
+                } else {
+                    const selectedBtn = document.querySelector(`.boss-opt-btn[data-index="${answerIndex}"]`);
+                    if (selectedBtn) {
+                        selectedBtn.style.background = "#10b981";
+                        selectedBtn.style.color = "#fff";
+                    }
+                }
+                
+                if (data.result === "defeat") {
+                    setTimeout(() => {
+                        document.getElementById("bossFightBody").style.display = "none";
+                        document.getElementById("bossDefeatScreen").style.display = "block";
+                    }, 1200);
+                } else if (data.result === "victory") {
+                    setTimeout(() => {
+                        document.getElementById("bossFightBody").style.display = "none";
+                        document.getElementById("bossVictoryScreen").style.display = "block";
+                        
+                        if (data.exp_awarded > 0) {
+                            showExpFlash(data.exp_awarded); // reuse HUD flash
+                        }
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        currentBossQIndex++;
+                        renderBossQuestion();
+                    }, 1000);
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    document.getElementById("btnBossVictoryClose").addEventListener("click", () => {
+        document.getElementById("bossFightModal").hidden = true;
+        if (btnMap.classList.contains("active")) {
+            loadGamifiedMap(); // Refresh map to unlock next node
+        }
+    });
+
+    document.getElementById("btnBossDefeatClose").addEventListener("click", () => {
+        document.getElementById("bossFightModal").hidden = true;
+    });
+
+    document.getElementById("btnBossRetry").addEventListener("click", async () => {
+        try {
+            const res = await fetch(`/api/units/${encodeURIComponent(currentBossUnitId)}/boss-fight/retry`, { method: "POST" });
+            const data = await res.json();
+            if (data.ok) {
+                currentBossAttempt = data.attempt_id;
+                currentBossQuestions = data.questions;
+                currentBossQIndex = 0;
+                openBossModal(data.hp);
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    // Mastery Mode Logic
+    let currentMasteryTopicId = null;
+    let currentMasteryQuestions = [];
+    let currentMasteryIndex = 0;
+    let isFetchingMastery = false;
+    let allAskedQuestions = [];
+    const quizMasterySelect = document.getElementById("quizMasterySelect");
+
+    async function populateMasteryTopics() {
+        if (!quizMasterySelect || quizMasterySelect.children.length > 1) return;
+        try {
+            const res = await fetch(`/api/syllabus/${sylId}/data`);
+            const data = await res.json();
+            const notes = data.notes;
+            
+            if (notes && notes.units) {
+                notes.units.forEach((u, uIdx) => {
+                    const optgroup = document.createElement("optgroup");
+                    optgroup.label = u.unit_name || `Unit ${uIdx + 1}`;
+                    if (u.topics) {
+                        u.topics.forEach((t, tIdx) => {
+                            const opt = document.createElement("option");
+                            opt.value = `${sylId}|${uIdx}|${tIdx}`;
+                            opt.textContent = t.topic_name || `Topic ${tIdx + 1}`;
+                            optgroup.appendChild(opt);
+                        });
+                    }
+                    quizMasterySelect.appendChild(optgroup);
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // Populate the dropdown when the quiz tab is clicked
+    const btnQuizTab = document.querySelector('.tab[data-tab="quiz"]');
+    if (btnQuizTab) {
+        btnQuizTab.addEventListener('click', populateMasteryTopics);
+    }
+    // Just in case it's already active
+    populateMasteryTopics();
+
+    document.getElementById("btnStartMastery").addEventListener("click", () => {
+        const topicId = quizMasterySelect.value;
+        if (!topicId) {
+            alert("Please select a topic to master.");
+            return;
+        }
+        startMasteryLoop(topicId);
+    });
+
+    window.startMasteryLoop = async function(topicId) {
+        currentMasteryTopicId = topicId;
+        currentMasteryQuestions = [];
+        currentMasteryIndex = 0;
+        allAskedQuestions = [];
+        isFetchingMastery = false;
+        
+        const practiceMain = document.getElementById("practiceMain");
+        if(practiceMain.querySelector(".empty")) practiceMain.querySelector(".empty").style.display = "none";
+        document.getElementById("quizWrap").hidden = true;
+        document.getElementById("masteryWrap").hidden = false;
+        
+        document.getElementById("masteryStreak").textContent = "🔥 Streak: 0/5";
+        document.getElementById("masteryLoading").hidden = false;
+        document.getElementById("masteryBody").innerHTML = '<div id="masteryLoading">Generating questions via Groq...</div>';
+        document.getElementById("btnMasteryNext").hidden = true;
+        
+        await fetchMasteryQuestions();
+        renderMasteryQuestion();
+    };
+
+    async function fetchMasteryQuestions() {
+        if (isFetchingMastery) return;
+        isFetchingMastery = true;
+        try {
+            const res = await fetch(`/api/topics/${encodeURIComponent(currentMasteryTopicId)}/mastery/generate`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ previous_questions: allAskedQuestions.slice(-20) })
+            });
+            const data = await res.json();
+            if (data.ok && data.questions && data.questions.length > 0) {
+                currentMasteryQuestions.push(...data.questions);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        isFetchingMastery = false;
+    }
+
+    function renderMasteryQuestion() {
+        const body = document.getElementById("masteryBody");
+        const nextBtn = document.getElementById("btnMasteryNext");
+        nextBtn.hidden = true;
+        
+        if (currentMasteryIndex >= currentMasteryQuestions.length) {
+            body.innerHTML = `<h3>Loading next questions... Please wait.</h3>`;
+            if (!isFetchingMastery) fetchMasteryQuestions().then(renderMasteryQuestion);
+            return;
+        }
+        
+        // Background pre-fetching logic when at length - 2
+        if (currentMasteryIndex === currentMasteryQuestions.length - 2 && !isFetchingMastery) {
+            fetchMasteryQuestions();
+        }
+
+        const q = currentMasteryQuestions[currentMasteryIndex];
+        allAskedQuestions.push(q.question);
+        
+        let opts = q.options;
+        if (typeof opts === 'object' && !Array.isArray(opts)) opts = Object.values(opts);
+        
+        body.innerHTML = `
+            <h3 style="margin-bottom: 20px; line-height: 1.5; width: 100%;">${q.question}</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                ${opts.map((opt, i) => `<button class="btn ghost mastery-opt-btn" data-index="${i}" style="text-align: left; padding: 15px; height: auto; white-space: normal;">${opt}</button>`).join('')}
+            </div>
+            <div id="masteryExplanation" style="margin-top: 20px; padding: 15px; background: rgba(16,185,129,0.1); border-left: 4px solid #10b981; display: none; width: 100%;">
+                <strong>Explanation:</strong> <span id="masteryExpText"></span>
+            </div>
+        `;
+        
+        document.querySelectorAll(".mastery-opt-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const ansIdx = parseInt(e.target.getAttribute("data-index"));
+                document.querySelectorAll(".mastery-opt-btn").forEach(b => b.disabled = true);
+                
+                const isCorrect = (ansIdx === q.answer_index);
+                
+                if (isCorrect) {
+                    e.target.style.background = "#10b981";
+                    e.target.style.color = "#fff";
+                } else {
+                    e.target.style.background = "#ef4444";
+                    e.target.style.color = "#fff";
+                    const correctBtn = document.querySelector(`.mastery-opt-btn[data-index="${q.answer_index}"]`);
+                    if (correctBtn) {
+                        correctBtn.style.border = "2px solid #10b981";
+                    }
+                }
+                
+                const expDiv = document.getElementById("masteryExplanation");
+                document.getElementById("masteryExpText").textContent = q.explanation || "No explanation provided.";
+                expDiv.style.display = "block";
+                
+                try {
+                    const res = await fetch(`/api/topics/${encodeURIComponent(currentMasteryTopicId)}/mastery/answer`, {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({ correct: isCorrect })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        document.getElementById("masteryStreak").textContent = `🔥 Streak: ${data.streak}/5`;
+                        if (data.mastered) {
+                            document.getElementById("masteryStreak").textContent = "🏆 MASTERED!";
+                            // Show floating exp text
+                            const floatEl = document.createElement("div");
+                            floatEl.textContent = `MASTERED!`;
+                            floatEl.style.cssText = "position: fixed; bottom: 20%; left: 50%; transform: translateX(-50%); color: #10b981; font-weight: bold; font-size: 32px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 9999; animation: floatUp 2s forwards;";
+                            document.body.appendChild(floatEl);
+                            setTimeout(() => floatEl.remove(), 2000);
+                        }
+                    }
+                } catch(err) { console.error(err); }
+                
+                nextBtn.hidden = false;
+            });
+        });
+    }
+
+    document.getElementById("btnMasteryNext").addEventListener("click", () => {
+        currentMasteryIndex++;
+        renderMasteryQuestion();
+    });
+
+    document.getElementById("btnExitMastery").addEventListener("click", () => {
+        document.getElementById("masteryWrap").hidden = true;
+        const practiceMain = document.getElementById("practiceMain");
+        if(practiceMain.querySelector(".empty")) practiceMain.querySelector(".empty").style.display = "block";
+    });
+
+});
+</script>
+{% endblock %}

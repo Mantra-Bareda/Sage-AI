@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="empty page-not-found">
+  <div class="empty-icon">🧭</div>
+  <div class="empty-title">Page not found</div>
+  <div class="empty-sub">The link you opened doesn’t exist (or you don’t have access).</div>
+  <div class="row">
+    <a class="btn" href="{{ url_for('index') }}">Go to Home</a>
+    <a class="btn primary" href="{{ url_for('dashboard') }}">Dashboard</a>
+  </div>
+</section>
+{% endblock %}

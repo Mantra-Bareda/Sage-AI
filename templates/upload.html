@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head" style="text-align: center; margin-bottom: 30px;">
+    <h2 class="page-title">Create a New Study Engine</h2>
+    <p class="page-subtitle">Upload your syllabus to generate AI notes, flashcards, and practice quizzes.</p>
+</section>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px;">
+    <form id="uploadForm" enctype="multipart/form-data" action="{{ url_for('api_upload') }}">
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Study Level</label>
+            <input type="text" name="class_name" placeholder="e.g., BTech 1st Semester, Class 10" required>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Subject Name</label>
+            <input type="text" name="course_name" placeholder="e.g., Data Structures, Physics" required>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">English Level</label>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <label class="radio-label">
+                    <input type="radio" name="language" value="english_easy" checked style="display: none;" onchange="updateRadioUI(this)">
+                    <span style="font-weight: bold;">Easy</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="language" value="english_medium" style="display: none;" onchange="updateRadioUI(this)">
+                    <span style="font-weight: bold;">Medium</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="language" value="english_high" style="display: none;" onchange="updateRadioUI(this)">
+                    <span style="font-weight: bold;">Hard</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="well" style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Upload PDF / Word Syllabus</label>
+            <input type="file" name="syllabus_pdf" accept=".pdf,.docx" style="padding:0; box-shadow:none; border:none; background:transparent;">
+            <p style="margin-top: 8px; font-size: 0.85em;" class="muted">
+                <strong>Note:</strong> Document should be in a text-readable format, not a scanned image format. Max Size: 10MB.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Manual Entry (Fallback)</label>
+            <textarea name="syllabus_text" rows="5" placeholder="If Document is not directly readable, manually type or paste the exact Unit and Topic names here..."></textarea>
+        </div>
+
+        <div class="well" style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 12px; font-weight: bold; font-size: 1.1em;">Customize Your Notes</label>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="exam_oriented"> <span>Exam-Oriented (Prioritize facts and definitions)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="code_heavy"> <span>Code & Implementation Heavy (More code snippets)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="eli5_analogies"> <span>ELI5 Analogies (Simple language and analogies)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="step_by_step"> <span>Step-by-Step Walkthroughs (Numbered steps)</span>
+                </label>
+            </div>
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Custom AI Instructions</label>
+            <textarea name="custom_prompt_text" rows="3" maxlength="500" placeholder="e.g., Explain everything using Marvel movie analogies..."></textarea>
+        </div>
+        <button type="submit" class="btn primary large" style="width: 100%;">
+            Analyze & Create <span class="spinner" hidden style="margin-left: 10px;"></span>
+        </button>
+    </form>
+</div>
+
+<script>
+function updateRadioUI(selectedInput) {
+    const labels = selectedInput.closest('.card').querySelectorAll('.radio-label');
+    labels.forEach(input => {
+        const parent = input.tagName === "INPUT" ? input.closest('label') : input;
+        if (parent.querySelector('input').checked) {
+            parent.classList.add('checked');
+        } else {
+            parent.classList.remove('checked');
+        }
+    });
+}
+// Initial UI update
+document.addEventListener("DOMContentLoaded", () => {
+    const checked = document.querySelector('input[name="language"]:checked');
+    if (checked) updateRadioUI(checked);
+});
+</script>
+{% endblock %}
