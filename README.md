@@ -118,25 +118,19 @@ Provides structured communication between the frontend and backend.
 ### Main Interface
 
 ```text
-![Main Interface](screenshots/home.png)
+![Main Interface](assets/classroom_preview.png)
 ```
 
 ### Document Upload
 
 ```text
-![Document Upload](screenshots/upload.png)
+![Document Upload](assets/dashboard_preview.png)
 ```
 
 ### AI Response
 
 ```text
-![AI Output](screenshots/response.png)
-```
-
-### Architecture (Optional)
-
-```text
-![Architecture](screenshots/architecture.png)
+![AI Output](assets/evaluation_preview.png)
 ```
 
 ## What I Learned
